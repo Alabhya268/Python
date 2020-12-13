@@ -1,7 +1,10 @@
 import base64
 import requests
 import datetime
+import pprint
+from urllib.parse import urlencode
 
+# Have your application request authorization
 client_id = 'd4dba07180974c278572a290fdda637f'
 client_secret = '16d045de6a834496a2b5a812ea156ced'
 
@@ -45,14 +48,47 @@ class SpotifyAPI(object):
         r = requests.post(token_url,data = token_data,headers = token_headers)
         print(r.json())
         if r.status_code not in range(200, 299):
-            return False
+            raise Exception('Could not authenticate client')
+            # return False
         data = r.json()
         now = datetime.datetime.now()
-        acccess_token = data['access_token']
+        self.access_token = data['access_token']
         expires_in = data['expires_in']
         self.access_token_expires = now + datetime.timedelta(seconds=expires_in)
         self.acccess_token_did_expire = self.access_token_expires < now
         return True
-        
-client = SpotifyAPI(client_id, client_secret)
-print (client.perform_auth())
+
+    def get_access_token(self):
+        token = self.access_token
+        expires = self.access_token_expires
+        now = datetime.datetime.now()
+        if expires < now:
+            self.perform_auth()
+            return self.get_access_token()
+        elif token == None:
+            self.perform_auth()
+            return self.get_access_token()
+        return token
+
+    def search(self, query, search_type = 'artist'):
+        access_token = self.get_access_token()
+        headers = {
+            'Authorization': f'Bearer {access_token}'
+        }
+        endpoint = 'https://api.spotify.com/v1/search'
+        data = urlencode({
+            'q': 'Time ',
+            'type': search_type.lower()
+        })
+        look_url = f'{endpoint}?{data}'
+        print(look_url)
+        r = requests.get(look_url,headers = headers)
+        pprint.pprint(r.json())
+        if r.status_code not in range(200, 299):
+            return {}
+        return r.json()
+
+spotifyAPI = SpotifyAPI(client_id, client_secret)
+spotifyAPI.search('Time', search_type='track')
+
+
