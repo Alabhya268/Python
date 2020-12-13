@@ -91,7 +91,7 @@ class SpotifyAPI(object):
     def get_artist(self, _id):
         return self.get_resource(_id, resource_type = 'artists')
 
-    def search(self, query, search_type = 'artist'):
+    def base_search(self, query_params, search_type = 'artist'):
         headers = self.get_resource_header()
         endpoint = 'https://api.spotify.com/v1/search'
         data = urlencode({
@@ -106,5 +106,18 @@ class SpotifyAPI(object):
             return {}
         return r.json()
 
+    def search(self, query = None, search_type = 'artist'):
+        if query == None:
+            raise Exception('A query is required')
+        if isinstance(query, dict):
+            query = ' '.join([f'{k}:{v}' for k, v in query.items()])
+        query_params = urlencode({
+            'q': query,
+            'type': search_type.lower()
+        })
+        print(query_params)
+        return self.base_search(query_params)
+
 spotifyAPI = SpotifyAPI(client_id, client_secret)
-spotifyAPI.search('Time', search_type='track')
+# spotifyAPI.base_search('Time', search_type='track')
+spotifyAPI.search({'track':'A lannister always pay his debts', 'artist':'Ramin'}, search_type= 'artist')
