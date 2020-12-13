@@ -69,12 +69,30 @@ class SpotifyAPI(object):
             self.perform_auth()
             return self.get_access_token()
         return token
-
-    def search(self, query, search_type = 'artist'):
+    
+    def get_resource_header(self):
         access_token = self.get_access_token()
         headers = {
             'Authorization': f'Bearer {access_token}'
         }
+        return headers
+
+    def get_resource(self, lookup_id, resource_type = 'album', version = 'v1'):
+        endpoint = f"https://api.spotify.com/{version}/{resource_type}/{lookup_id}"
+        headers = self.get_resource_header()
+        r = requests.get(endpoint, headers = headers)
+        if r.status_code not in range(200, 299):
+            return {}
+        return r.json()
+
+    def get_album(self, _id):
+        return self.get_resource(_id, resource_type = 'albums')
+
+    def get_artist(self, _id):
+        return self.get_resource(_id, resource_type = 'artists')
+
+    def search(self, query, search_type = 'artist'):
+        headers = self.get_resource_header()
         endpoint = 'https://api.spotify.com/v1/search'
         data = urlencode({
             'q': 'Time ',
@@ -90,5 +108,3 @@ class SpotifyAPI(object):
 
 spotifyAPI = SpotifyAPI(client_id, client_secret)
 spotifyAPI.search('Time', search_type='track')
-
-
